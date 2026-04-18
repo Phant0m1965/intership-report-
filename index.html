@@ -38,7 +38,7 @@
 
 <body>
 
-<h2>🔐 Secure PDF Access</h2>
+<h2>🔐 Secure PDF Access System</h2>
 
 <!-- PASSWORD -->
 <input type="password" id="password" placeholder="Enter Password">
@@ -53,6 +53,11 @@
   <br>
   <button onclick="verifyOTP()">Verify OTP</button>
 </div>
+
+<br>
+
+<!-- DEBUG BUTTON -->
+<button onclick="testEmail()">📩 Test Email</button>
 
 <p id="msg"></p>
 
@@ -73,7 +78,7 @@ let otpTime = 0;
 let attempts = 0;
 let lockUntil = 0;
 
-// PASSWORD CHECK
+// 🔥 PASSWORD CHECK
 function checkPassword() {
 
   let now = Date.now();
@@ -96,23 +101,27 @@ function checkPassword() {
     generatedOTP = Math.floor(100000 + Math.random() * 900000);
     otpTime = Date.now();
 
-    // send email
+    // SEND EMAIL
     emailjs.send(serviceID, templateID, {
       to_email: receiverEmail,
-      message: "Your OTP is: " + generatedOTP
+      message: generatedOTP
+    })
+    .then(() => {
+      document.getElementById("msg").innerText = "✅ OTP sent to email (valid 1 min)";
+      document.getElementById("otpBox").style.display = "block";
+    })
+    .catch((err) => {
+      console.log(err);
+      document.getElementById("msg").innerText = "❌ Email failed (check setup)";
     });
-
-    document.getElementById("otpBox").style.display = "block";
-    document.getElementById("msg").innerText = "✅ OTP sent to email (valid 1 min)";
 
   } else {
 
     attempts++;
 
     if (attempts >= 3) {
-      lockUntil = Date.now() + (1 * 60 * 1000); // 🔥 1 minute lock
+      lockUntil = Date.now() + (1 * 60 * 1000); // 1 min lock
       attempts = 0;
-
       document.getElementById("msg").innerText =
         "🚫 Too many attempts. Locked for 1 minute.";
     } else {
@@ -122,22 +131,26 @@ function checkPassword() {
   }
 }
 
-// OTP VERIFY
+// 🔥 OTP VERIFY
 function verifyOTP() {
 
   let input = document.getElementById("otp").value;
 
-  // OTP expiry check (1 min)
+  if (!input) {
+    document.getElementById("msg").innerText = "⚠️ Enter OTP first!";
+    return;
+  }
+
+  // expiry check
   let now = Date.now();
   if (now - otpTime > 60000) {
-    document.getElementById("msg").innerText = "⏳ OTP expired! Try again.";
+    document.getElementById("msg").innerText = "⏳ OTP expired!";
     return;
   }
 
   if (input == generatedOTP) {
     document.getElementById("msg").innerText = "✅ Access granted! Opening PDF...";
 
-    // Secure open
     fetch("file.pdf")
       .then(res => res.blob())
       .then(blob => {
@@ -148,6 +161,21 @@ function verifyOTP() {
   } else {
     document.getElementById("msg").innerText = "❌ Wrong OTP!";
   }
+}
+
+// 🔥 TEST EMAIL FUNCTION
+function testEmail() {
+  emailjs.send(serviceID, templateID, {
+    to_email: receiverEmail,
+    message: "TEST OTP 123456"
+  })
+  .then(() => {
+    document.getElementById("msg").innerText = "✅ Test email sent!";
+  })
+  .catch((err) => {
+    console.log("ERROR:", err);
+    document.getElementById("msg").innerText = "❌ Email failed (check console)";
+  });
 }
 </script>
 
