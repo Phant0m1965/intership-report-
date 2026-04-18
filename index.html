@@ -2,58 +2,151 @@
 <html>
 <head>
   <title>Secure PDF System</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      font-family: Arial;
+      text-align: center;
+      padding: 20px;
+    }
+
+    input {
+      padding: 10px;
+      margin: 5px;
+      width: 80%;
+      max-width: 300px;
+    }
+
+    button {
+      padding: 10px 15px;
+      margin: 5px;
+      cursor: pointer;
+    }
+
+    #otpBox {
+      display: none;
+      margin-top: 20px;
+    }
+
+    #msg {
+      margin-top: 15px;
+      font-weight: bold;
+    }
+  </style>
 </head>
+
 <body>
 
-<h2>PDF Access System</h2>
+<h2>🔐 Secure PDF Access</h2>
 
+<!-- PASSWORD -->
 <input type="password" id="password" placeholder="Enter Password">
+<br>
 <button onclick="checkPassword()">Submit</button>
 
 <br><br>
 
-<div id="otpBox" style="display:none;">
+<!-- OTP -->
+<div id="otpBox">
   <input type="text" id="otp" placeholder="Enter OTP">
+  <br>
   <button onclick="verifyOTP()">Verify OTP</button>
 </div>
 
 <p id="msg"></p>
 
-<script src="https://cdn.emailjs.com/dist/email.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
 
 <script>
-emailjs.init("YOUR_PUBLIC_KEY");
+emailjs.init("ewF-SAioIdVR_29GE");
 
+// CONFIG
+const correctPassword = "Admin#01!01#11$00%";
+const serviceID = "service_7zxd95s";
+const templateID = "template_58vy1k2";
+const receiverEmail = "YOUR_EMAIL@gmail.com";
+
+// STATE
 let generatedOTP = "";
+let otpTime = 0;
+let attempts = 0;
+let lockUntil = 0;
 
+// PASSWORD CHECK
 function checkPassword() {
+
+  let now = Date.now();
+
+  // LOCK CHECK
+  if (now < lockUntil) {
+    let remaining = Math.ceil((lockUntil - now) / 1000);
+    document.getElementById("msg").innerText =
+      "🚫 Locked. Try again after " + remaining + " seconds";
+    return;
+  }
+
   let pass = document.getElementById("password").value;
 
-  if(pass === "Admin#01!01#11$00%") {
+  if (pass === correctPassword) {
 
+    attempts = 0;
+
+    // OTP generate
     generatedOTP = Math.floor(100000 + Math.random() * 900000);
+    otpTime = Date.now();
 
-    emailjs.send("YOUR_SERVICE_ID", "YOUR_TEMPLATE_ID", {
-      to_email: "YOUR_EMAIL@gmail.com",
+    // send email
+    emailjs.send(serviceID, templateID, {
+      to_email: receiverEmail,
       message: "Your OTP is: " + generatedOTP
     });
 
-    document.getElementById("msg").innerText = "OTP sent to email!";
     document.getElementById("otpBox").style.display = "block";
+    document.getElementById("msg").innerText = "✅ OTP sent to email (valid 1 min)";
 
   } else {
-    document.getElementById("msg").innerText = "Wrong password!";
+
+    attempts++;
+
+    if (attempts >= 3) {
+      lockUntil = Date.now() + (1 * 60 * 1000); // 🔥 1 minute lock
+      attempts = 0;
+
+      document.getElementById("msg").innerText =
+        "🚫 Too many attempts. Locked for 1 minute.";
+    } else {
+      document.getElementById("msg").innerText =
+        "❌ Wrong password (" + attempts + "/3)";
+    }
   }
 }
 
+// OTP VERIFY
 function verifyOTP() {
+
   let input = document.getElementById("otp").value;
 
-  if(input == generatedOTP) {
-    document.getElementById("msg").innerText = "Access granted!";
-    window.open("file.pdf");
+  // OTP expiry check (1 min)
+  let now = Date.now();
+  if (now - otpTime > 60000) {
+    document.getElementById("msg").innerText = "⏳ OTP expired! Try again.";
+    return;
+  }
+
+  if (input == generatedOTP) {
+    document.getElementById("msg").innerText = "✅ Access granted! Opening PDF...";
+
+    // Secure open
+    fetch("file.pdf")
+      .then(res => res.blob())
+      .then(blob => {
+        let url = URL.createObjectURL(blob);
+        window.open(url, "_blank");
+      });
+
   } else {
-    document.getElementById("msg").innerText = "Wrong OTP!";
+    document.getElementById("msg").innerText = "❌ Wrong OTP!";
   }
 }
 </script>
