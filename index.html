@@ -106,7 +106,7 @@ async function verifyOTP() {
 
     try {
       // Decrypt PDF with OTP password
-      const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer, { password: otpPDFPassword });
+      const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer, { password: otpPDFPassword,ignoreEncryption: true  });
       const pdfBytes = await pdfDoc.save();
       const url = URL.createObjectURL(new Blob([pdfBytes], { type: 'application/pdf' }));
       window.open(url, "_blank");
