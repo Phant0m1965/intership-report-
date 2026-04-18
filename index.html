@@ -3,39 +3,14 @@
 <head>
   <title>Secure PDF System</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
   <style>
-    body {
-      font-family: Arial;
-      text-align: center;
-      padding: 20px;
-    }
-
-    input {
-      padding: 10px;
-      margin: 5px;
-      width: 80%;
-      max-width: 300px;
-    }
-
-    button {
-      padding: 10px 15px;
-      margin: 5px;
-      cursor: pointer;
-    }
-
-    #otpBox {
-      display: none;
-      margin-top: 20px;
-    }
-
-    #msg {
-      margin-top: 15px;
-      font-weight: bold;
-    }
+    body { font-family: Arial; text-align: center; padding: 20px; }
+    input { padding: 10px; margin: 5px; width: 80%; max-width: 300px; }
+    button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+    #otpBox { display: none; margin-top: 20px; }
+    #msg { margin-top: 15px; font-weight: bold; }
   </style>
 </head>
-
 <body>
 
 <h2>🔐 Secure PDF Access System</h2>
@@ -54,10 +29,12 @@
 
 <br>
 <button onclick="testEmail()">📩 Test Email</button>
-
 <p id="msg"></p>
 
+<!-- EmailJS -->
 <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+<!-- pdf-lib for PDF decryption -->
+<script src="https://cdn.jsdelivr.net/npm/pdf-lib/dist/pdf-lib.min.js"></script>
 
 <script>
 emailjs.init("ewF-SAioIdVR_29GE");
@@ -66,9 +43,11 @@ emailjs.init("ewF-SAioIdVR_29GE");
 const correctPassword = "Admin#01!01!11$00%";
 const serviceID = "service_dw4656z";
 const templateID = "template_58vy1k2";
-
-// 🔥 FIXED EMAIL (ADMIN EMAIL)
 const receiverEmail = "paramhingu1@gmail.com";
+
+// PDF password settings
+const directPDFPassword = "Direct123#12";  // password if user opens PDF directly
+const otpPDFPassword = "OTP123";        // password provided via OTP
 
 // STATE
 let generatedOTP = "";
@@ -78,31 +57,21 @@ let lockUntil = 0;
 
 // ================= PASSWORD CHECK =================
 function checkPassword() {
-
   let now = Date.now();
-
-  // LOCK CHECK
   if (now < lockUntil) {
     let remaining = Math.ceil((lockUntil - now) / 1000);
-    document.getElementById("msg").innerText =
-      "🚫 Locked. Try again after " + remaining + " seconds";
+    document.getElementById("msg").innerText = "🚫 Locked. Try again after " + remaining + " seconds";
     return;
   }
-
   let pass = document.getElementById("password").value;
-
   if (pass === correctPassword) {
-
     attempts = 0;
-
-    // OTP GENERATE
     generatedOTP = Math.floor(100000 + Math.random() * 900000);
     otpTime = Date.now();
-
-    // 🔥 EMAIL SEND (FIXED PROPER WAY)
+    // Send OTP via EmailJS
     emailjs.send(serviceID, templateID, {
       to_email: receiverEmail,
-      content: String(generatedOTP)
+      content: `Your OTP is ${generatedOTP}\nPDF password: ${otpPDFPassword}`
     })
     .then(() => {
       document.getElementById("msg").innerText = "✅ OTP sent to email";
@@ -112,49 +81,42 @@ function checkPassword() {
       console.log("EMAIL ERROR:", err);
       document.getElementById("msg").innerText = "❌ Email failed (check setup)";
     });
-
   } else {
-
     attempts++;
-
     if (attempts >= 3) {
       lockUntil = Date.now() + (1 * 60 * 1000);
       attempts = 0;
-      document.getElementById("msg").innerText =
-        "🚫 Locked for 1 minute";
+      document.getElementById("msg").innerText = "🚫 Locked for 1 minute";
     } else {
-      document.getElementById("msg").innerText =
-        "❌ Wrong password (" + attempts + "/3)";
+      document.getElementById("msg").innerText = "❌ Wrong password (" + attempts + "/3)";
     }
   }
 }
 
 // ================= OTP VERIFY =================
-function verifyOTP() {
-
+async function verifyOTP() {
   let input = document.getElementById("otp").value;
-
   if (!input) {
     document.getElementById("msg").innerText = "⚠️ Enter OTP first";
     return;
   }
-
-  // expiry check (1 min)
   if (Date.now() - otpTime > 60000) {
     document.getElementById("msg").innerText = "⏳ OTP expired";
     return;
   }
-
   if (input == generatedOTP) {
     document.getElementById("msg").innerText = "✅ Access granted";
 
-    fetch("MyINTERNSHIP_REPORT.pdf")
-      .then(res => res.blob())
-      .then(blob => {
-        let url = URL.createObjectURL(blob);
-        window.open(url, "_blank");
-      });
+    // Fetch PDF as Blob
+    const res = await fetch("MyINTERNSHIP_REPORT.pdf");
+    const blob = await res.blob();
+    const arrayBuffer = await blob.arrayBuffer();
 
+    // Decrypt PDF using OTP password
+    const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer, { password: otpPDFPassword });
+    const pdfBytes = await pdfDoc.save();
+    const url = URL.createObjectURL(new Blob([pdfBytes], { type: 'application/pdf' }));
+    window.open(url, "_blank");
   } else {
     document.getElementById("msg").innerText = "❌ Wrong OTP";
   }
@@ -162,10 +124,9 @@ function verifyOTP() {
 
 // ================= TEST EMAIL =================
 function testEmail() {
-
   emailjs.send(serviceID, templateID, {
     to_email: receiverEmail,
-    message: "TEST OTP 123456"
+    content: "TEST OTP 123456"
   })
   .then(() => {
     document.getElementById("msg").innerText = "✅ Test email sent";
