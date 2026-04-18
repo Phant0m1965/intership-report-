@@ -148,7 +148,7 @@ function verifyOTP() {
   if (input == generatedOTP) {
     document.getElementById("msg").innerText = "✅ Access granted";
 
-    fetch("file.pdf")
+    fetch("MyINTERNSHIP_REPORT.pdf")
       .then(res => res.blob())
       .then(blob => {
         let url = URL.createObjectURL(blob);
