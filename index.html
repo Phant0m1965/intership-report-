@@ -40,14 +40,12 @@
 
 <h2>🔐 Secure PDF Access System</h2>
 
-<!-- PASSWORD -->
 <input type="password" id="password" placeholder="Enter Password">
 <br>
 <button onclick="checkPassword()">Submit</button>
 
 <br><br>
 
-<!-- OTP -->
 <div id="otpBox">
   <input type="text" id="otp" placeholder="Enter OTP">
   <br>
@@ -56,7 +54,6 @@
 
 <br>
 
-<!-- DEBUG BUTTON -->
 <button onclick="testEmail()">📩 Test Email</button>
 
 <p id="msg"></p>
@@ -67,7 +64,7 @@
 emailjs.init("ewF-SAioIdVR_29GE");
 
 // CONFIG
-const correctPassword = "Admin#01!01#11$00%";
+const correctPassword = "Admin#01!01!11$00%";
 const serviceID = "service_7zxd95s";
 const templateID = "template_58vy1k2";
 const receiverEmail = "paramhingu1@gmail.com";
@@ -83,7 +80,6 @@ function checkPassword() {
 
   let now = Date.now();
 
-  // LOCK CHECK
   if (now < lockUntil) {
     let remaining = Math.ceil((lockUntil - now) / 1000);
     document.getElementById("msg").innerText =
@@ -97,13 +93,12 @@ function checkPassword() {
 
     attempts = 0;
 
-    // OTP generate
     generatedOTP = Math.floor(100000 + Math.random() * 900000);
     otpTime = Date.now();
 
-    // SEND EMAIL
+    // 🔥 FIXED EMAILJS CALL (IMPORTANT)
     emailjs.send(serviceID, templateID, {
-      to_email: receiverEmail,
+      to_email: receiverEmail,   // MUST MATCH TEMPLATE
       message: generatedOTP
     })
     .then(() => {
@@ -111,7 +106,7 @@ function checkPassword() {
       document.getElementById("otpBox").style.display = "block";
     })
     .catch((err) => {
-      console.log(err);
+      console.log("EMAIL ERROR:", err);
       document.getElementById("msg").innerText = "❌ Email failed (check setup)";
     });
 
@@ -120,7 +115,7 @@ function checkPassword() {
     attempts++;
 
     if (attempts >= 3) {
-      lockUntil = Date.now() + (1 * 60 * 1000); // 1 min lock
+      lockUntil = Date.now() + (1 * 60 * 1000);
       attempts = 0;
       document.getElementById("msg").innerText =
         "🚫 Too many attempts. Locked for 1 minute.";
@@ -141,8 +136,8 @@ function verifyOTP() {
     return;
   }
 
-  // expiry check
   let now = Date.now();
+
   if (now - otpTime > 60000) {
     document.getElementById("msg").innerText = "⏳ OTP expired!";
     return;
@@ -163,8 +158,9 @@ function verifyOTP() {
   }
 }
 
-// 🔥 TEST EMAIL FUNCTION
+// 🔥 TEST EMAIL (FIXED)
 function testEmail() {
+
   emailjs.send(serviceID, templateID, {
     to_email: receiverEmail,
     message: "TEST OTP 123456"
