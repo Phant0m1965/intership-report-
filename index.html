@@ -53,7 +53,6 @@
 </div>
 
 <br>
-
 <button onclick="testEmail()">📩 Test Email</button>
 
 <p id="msg"></p>
@@ -67,6 +66,8 @@ emailjs.init("ewF-SAioIdVR_29GE");
 const correctPassword = "Admin#01!01!11$00%";
 const serviceID = "service_7zxd95s";
 const templateID = "template_58vy1k2";
+
+// 🔥 FIXED EMAIL (ADMIN EMAIL)
 const receiverEmail = "paramhingu1@gmail.com";
 
 // STATE
@@ -75,11 +76,12 @@ let otpTime = 0;
 let attempts = 0;
 let lockUntil = 0;
 
-// 🔥 PASSWORD CHECK
+// ================= PASSWORD CHECK =================
 function checkPassword() {
 
   let now = Date.now();
 
+  // LOCK CHECK
   if (now < lockUntil) {
     let remaining = Math.ceil((lockUntil - now) / 1000);
     document.getElementById("msg").innerText =
@@ -93,16 +95,17 @@ function checkPassword() {
 
     attempts = 0;
 
+    // OTP GENERATE
     generatedOTP = Math.floor(100000 + Math.random() * 900000);
     otpTime = Date.now();
 
-    // 🔥 FIXED EMAILJS CALL (IMPORTANT)
+    // 🔥 EMAIL SEND (FIXED PROPER WAY)
     emailjs.send(serviceID, templateID, {
-      to_email: receiverEmail,   // MUST MATCH TEMPLATE
-      message: generatedOTP
+      to_email: receiverEmail,
+      message: String(generatedOTP)
     })
     .then(() => {
-      document.getElementById("msg").innerText = "✅ OTP sent to email (valid 1 min)";
+      document.getElementById("msg").innerText = "✅ OTP sent to email";
       document.getElementById("otpBox").style.display = "block";
     })
     .catch((err) => {
@@ -118,7 +121,7 @@ function checkPassword() {
       lockUntil = Date.now() + (1 * 60 * 1000);
       attempts = 0;
       document.getElementById("msg").innerText =
-        "🚫 Too many attempts. Locked for 1 minute.";
+        "🚫 Locked for 1 minute";
     } else {
       document.getElementById("msg").innerText =
         "❌ Wrong password (" + attempts + "/3)";
@@ -126,25 +129,24 @@ function checkPassword() {
   }
 }
 
-// 🔥 OTP VERIFY
+// ================= OTP VERIFY =================
 function verifyOTP() {
 
   let input = document.getElementById("otp").value;
 
   if (!input) {
-    document.getElementById("msg").innerText = "⚠️ Enter OTP first!";
+    document.getElementById("msg").innerText = "⚠️ Enter OTP first";
     return;
   }
 
-  let now = Date.now();
-
-  if (now - otpTime > 60000) {
-    document.getElementById("msg").innerText = "⏳ OTP expired!";
+  // expiry check (1 min)
+  if (Date.now() - otpTime > 60000) {
+    document.getElementById("msg").innerText = "⏳ OTP expired";
     return;
   }
 
   if (input == generatedOTP) {
-    document.getElementById("msg").innerText = "✅ Access granted! Opening PDF...";
+    document.getElementById("msg").innerText = "✅ Access granted";
 
     fetch("file.pdf")
       .then(res => res.blob())
@@ -154,11 +156,11 @@ function verifyOTP() {
       });
 
   } else {
-    document.getElementById("msg").innerText = "❌ Wrong OTP!";
+    document.getElementById("msg").innerText = "❌ Wrong OTP";
   }
 }
 
-// 🔥 TEST EMAIL (FIXED)
+// ================= TEST EMAIL =================
 function testEmail() {
 
   emailjs.send(serviceID, templateID, {
@@ -166,11 +168,11 @@ function testEmail() {
     message: "TEST OTP 123456"
   })
   .then(() => {
-    document.getElementById("msg").innerText = "✅ Test email sent!";
+    document.getElementById("msg").innerText = "✅ Test email sent";
   })
   .catch((err) => {
     console.log("ERROR:", err);
-    document.getElementById("msg").innerText = "❌ Email failed (check console)";
+    document.getElementById("msg").innerText = "❌ Email failed";
   });
 }
 </script>
